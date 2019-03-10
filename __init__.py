@@ -21,6 +21,8 @@ def draw_change(self, context):
         ICYP_OT_view_info_drawer.draw_func_remove()
     return None
 
+bpy.app.handlers.load_post.append(draw_change)
+
 class ICYP_OT_view_info_drawer(bpy.types.Panel):
     bl_idname = "icyp.view_info"
     bl_label = "Show info about view"
@@ -60,11 +62,19 @@ class ICYP_OT_view_info_drawer(bpy.types.Panel):
         messages = ICYP_OT_view_info_drawer.messages_dict
         persp = bpy.context.space_data.region_3d.view_perspective
         if persp == "CAMERA":
-            messages["Focal len"] =  f"Focal len :{bpy.context.space_data.camera.data.lens}"
+            messages["Focal len"] =  f"Focal len :{bpy.context.space_data.camera.data.lens:.1f}"
+            if bpy.context.space_data.camera.data.lens >= 60:
+                messages["Focal len"] += " WIDE"
+            elif bpy.context.space_data.camera.data.lens <= 25:
+                messages["Focal len"] += " ZOOM"
         elif persp == "ORTHO":
-             messages["Focal len"] = f"Focal len: ORTHO"
+            messages["Focal len"] = f"Focal len: ORTHO"
         else:
-            messages["Focal len"] = f"Focal len :{bpy.context.space_data.lens}"
+            messages["Focal len"] = f"Focal len :{bpy.context.space_data.lens:.1f}"
+            if bpy.context.space_data.lens >= 60:
+                messages["Focal len"] += " ZOOM"
+            elif bpy.context.space_data.lens <= 25:
+                messages["Focal len"] += " WIDE"
         messages["camera mode"] = f"camera mode :{bpy.context.space_data.region_3d.view_perspective}"
         #なんかちがうmessages["camera height"] = f"camera height :{bpy.context.space_data.region_3d.view_location[2]}"
         text_size = bpy.context.scene.icyp_view_info_text_size
@@ -82,7 +92,6 @@ def register():
     bpy.types.Scene.icyp_view_info_text_size = bpy.props.IntProperty(default=20,min=1,name = "text size")
     for c in classes:
         bpy.utils.register_class(c)
-    #bpy.app.handlers.load_post.append(draw_change)
     
 
 # アドオン無効化時の処理
@@ -91,7 +100,7 @@ def unregister():
     del bpy.types.Scene.icyp_view_info_text_size
     for c in classes:
         bpy.utils.unregister_class(c)
-    #bpy.app.handlers.load_post.remove(draw_change)
+    bpy.app.handlers.load_post.remove(draw_change)
 
 if "__main__" == __name__:
     register()
