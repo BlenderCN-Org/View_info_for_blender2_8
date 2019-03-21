@@ -61,20 +61,22 @@ class ICYP_OT_view_info_drawer(bpy.types.Panel):
     def texts_draw():
         messages = ICYP_OT_view_info_drawer.messages_dict
         persp = bpy.context.space_data.region_3d.view_perspective
-        if persp == "CAMERA":
-            messages["Focal len"] =  f"Focal len :{bpy.context.space_data.camera.data.lens:.1f}"
-            if bpy.context.space_data.camera.data.lens >= 60:
-                messages["Focal len"] += " WIDE"
-            elif bpy.context.space_data.camera.data.lens <= 25:
-                messages["Focal len"] += " ZOOM"
-        elif persp == "ORTHO":
+
+        if persp == "ORTHO":
             messages["Focal len"] = f"Focal len: ORTHO"
         else:
-            messages["Focal len"] = f"Focal len :{bpy.context.space_data.lens:.1f}"
-            if bpy.context.space_data.lens >= 60:
+            if persp == "CAMERA":
+                focal_len = bpy.context.space_data.camera.data.lens
+            else:
+                focal_len = bpy.context.space_data.lens
+            messages["Focal len"] = f"Focal len :{focal_len:.1f}"
+            if focal_len >= 60:
                 messages["Focal len"] += " ZOOM"
-            elif bpy.context.space_data.lens <= 25:
+            elif focal_len >= 47 and focal_len <= 52:
+                messages["Focal len"] += " Eye like"
+            elif focal_len <= 25:
                 messages["Focal len"] += " WIDE"
+
         messages["camera mode"] = f"camera mode :{bpy.context.space_data.region_3d.view_perspective}"
         #なんかちがうmessages["camera height"] = f"camera height :{bpy.context.space_data.region_3d.view_location[2]}"
         text_size = bpy.context.scene.icyp_view_info_text_size
