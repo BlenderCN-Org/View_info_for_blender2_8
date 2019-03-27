@@ -19,16 +19,16 @@ bl_info = {
 @persistent
 def draw_change_load_post(_):
     if bpy.context.scene.icyp_view_info_flag:
-        ICYP_OT_view_info_drawer.draw_func_add()
+        ICYP_PT_view_info_drawer.draw_func_add()
     else:
-        ICYP_OT_view_info_drawer.draw_func_remove()
+        ICYP_PT_view_info_drawer.draw_func_remove()
     return None
 
 def draw_change(self,context):
     if context.scene.icyp_view_info_flag:
-        ICYP_OT_view_info_drawer.draw_func_add()
+        ICYP_PT_view_info_drawer.draw_func_add()
     else:
-        ICYP_OT_view_info_drawer.draw_func_remove()
+        ICYP_PT_view_info_drawer.draw_func_remove()
     return None
 
 def camera_info(messages):
@@ -72,8 +72,8 @@ def mesh_info(messages):
 
     return
 
-class ICYP_OT_view_info_drawer(bpy.types.Panel):
-    bl_idname = "icyp.view_info"
+class ICYP_PT_view_info_drawer(bpy.types.Panel):
+    bl_idname = "ICYP_PT_view_info"
     bl_label = "Show info about view"
 
     bl_space_type = "VIEW_3D"
@@ -93,25 +93,25 @@ class ICYP_OT_view_info_drawer(bpy.types.Panel):
     draw_func = None
     @staticmethod
     def draw_func_add():
-        if ICYP_OT_view_info_drawer.draw_func is not None:
-            ICYP_OT_view_info_drawer.draw_func_remove()
-        ICYP_OT_view_info_drawer.draw_func = bpy.types.SpaceView3D.draw_handler_add(
-            ICYP_OT_view_info_drawer.texts_draw,
+        if ICYP_PT_view_info_drawer.draw_func is not None:
+            ICYP_PT_view_info_drawer.draw_func_remove()
+        ICYP_PT_view_info_drawer.draw_func = bpy.types.SpaceView3D.draw_handler_add(
+            ICYP_PT_view_info_drawer.texts_draw,
             (), 'WINDOW', 'POST_PIXEL')
 
     @staticmethod
     def draw_func_remove():
-        if ICYP_OT_view_info_drawer.draw_func is not None:
+        if ICYP_PT_view_info_drawer.draw_func is not None:
             bpy.types.SpaceView3D.draw_handler_remove(
-                ICYP_OT_view_info_drawer.draw_func, 'WINDOW')
-            ICYP_OT_view_info_drawer.draw_func = None
+                ICYP_PT_view_info_drawer.draw_func, 'WINDOW')
+            ICYP_PT_view_info_drawer.draw_func = None
     
     messages_dict = OrderedDict()
     draw_dict = dict()
     @staticmethod
     def texts_draw():
-        messages_parent = ICYP_OT_view_info_drawer.messages_dict
-        draw_dict = ICYP_OT_view_info_drawer.draw_dict
+        messages_parent = ICYP_PT_view_info_drawer.messages_dict
+        draw_dict = ICYP_PT_view_info_drawer.draw_dict
         camera_info(messages_parent)
         draw_dict["camera_info"] = True
         if bpy.context.mode == "EDIT_MESH":
@@ -130,6 +130,7 @@ class ICYP_OT_view_info_drawer(bpy.types.Panel):
         blf.shadow_offset(0,1,-1) #fontid x(pixel) y
         for i,text in enumerate([(log_func,message) for log_func,messages in messages_parent.items() for message in messages.values()]):
             if draw_dict[text[0]]:
+                #bpy.context.area.height
                 blf.position(0, text_size, text_size*(i+1)+100, 0)
                 blf.draw(0, f"{text[1]}")
             else:
@@ -137,7 +138,7 @@ class ICYP_OT_view_info_drawer(bpy.types.Panel):
 
 
 # アドオン有効化時の処理
-classes = [ICYP_OT_view_info_drawer]
+classes = [ICYP_PT_view_info_drawer]
 def register():
     bpy.types.Scene.icyp_view_info_flag = bpy.props.BoolProperty(default=False,update=draw_change,name="Show view info")
     bpy.types.Scene.icyp_view_info_text_size = bpy.props.IntProperty(default=20,min=1,name = "text size")
