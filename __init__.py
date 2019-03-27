@@ -1,5 +1,7 @@
 import bpy,blf
+from bpy.app.handlers import persistent
 from collections import OrderedDict
+
 bl_info = {
     "name":"View_info_for_blender2_8",
     "author": "iCyP",
@@ -14,14 +16,20 @@ bl_info = {
     "category": "Scene"
 }
 
-def draw_change(self, context):
-    if context.scene.icyp_view_info_flag:
+@persistent
+def draw_change_load_post(_):
+    if bpy.context.scene.icyp_view_info_flag:
         ICYP_OT_view_info_drawer.draw_func_add()
     else:
         ICYP_OT_view_info_drawer.draw_func_remove()
     return None
 
-bpy.app.handlers.load_post.append(draw_change)
+def draw_change(self,context):
+    if context.scene.icyp_view_info_flag:
+        ICYP_OT_view_info_drawer.draw_func_add()
+    else:
+        ICYP_OT_view_info_drawer.draw_func_remove()
+    return None
 
 class ICYP_OT_view_info_drawer(bpy.types.Panel):
     bl_idname = "icyp.view_info"
@@ -94,7 +102,7 @@ def register():
     bpy.types.Scene.icyp_view_info_text_size = bpy.props.IntProperty(default=20,min=1,name = "text size")
     for c in classes:
         bpy.utils.register_class(c)
-    
+    bpy.app.handlers.load_post.append(draw_change_load_post)
 
 # アドオン無効化時の処理
 def unregister():
@@ -102,7 +110,7 @@ def unregister():
     del bpy.types.Scene.icyp_view_info_text_size
     for c in classes:
         bpy.utils.unregister_class(c)
-    bpy.app.handlers.load_post.remove(draw_change)
+    bpy.app.handlers.load_post.remove(draw_change_load_post)
 
 if "__main__" == __name__:
     register()
