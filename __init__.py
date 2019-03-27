@@ -31,6 +31,47 @@ def draw_change(self,context):
         ICYP_OT_view_info_drawer.draw_func_remove()
     return None
 
+def camera_info(messages):
+    persp = bpy.context.space_data.region_3d.view_perspective
+    cam_messages = messages["camera_info"] = OrderedDict()
+    if persp == "ORTHO":
+        cam_messages["Focal len"] = f"Focal len: ORTHO"
+    else:
+        if persp == "CAMERA":
+            focal_len = bpy.context.space_data.camera.data.lens
+        else:
+            focal_len = bpy.context.space_data.lens
+        if bpy.context.space_data.camera is not None:
+            camera = bpy.context.space_data.camera
+            hit,loc,norm,_,_,_ = bpy.context.scene.ray_cast(bpy.context.view_layer,camera.location,[0,0,-1])
+            if hit:
+                cam_messages["CAMERA_HEIGHT"] = f"CAMERA_HEIGHT :{camera.location[2]-loc[2]:.2f}m"
+            else:
+                cam_messages["CAMERA_HEIGHT"] = f"CAMERA_HEIGHT :{camera.location[2]:.2f}m"
+        else:
+            if "CAMERA_HEIGHT" in cam_messages.keys():
+                del cam_messages["CAMERA_HEIGHT"]
+        cam_messages["Focal len"] = f"Focal len :{focal_len:.1f}"
+        if focal_len >= 60:
+            cam_messages["Focal len"] += " ZOOM"
+        elif focal_len >= 47 and focal_len <= 52:
+            cam_messages["Focal len"] += " Eye like"
+        elif focal_len <= 25:
+            cam_messages["Focal len"] += " WIDE"
+
+    cam_messages["camera mode"] = f"camera mode :{bpy.context.space_data.region_3d.view_perspective}"
+    return
+
+def mesh_info(messages):
+    mesh_messages = messages["mesh_info"] = OrderedDict()
+    obj = bpy.context.active_object
+    if obj.active_shape_key is not None:
+        mesh_messages["ACTIVE_SHAPE"]=f"ACTIVE SHAPE KEY : {obj.active_shape_key.name}"
+    else:
+        del mesh_messages["AC"]
+
+    return
+
 class ICYP_OT_view_info_drawer(bpy.types.Panel):
     bl_idname = "icyp.view_info"
     bl_label = "Show info about view"
@@ -66,38 +107,18 @@ class ICYP_OT_view_info_drawer(bpy.types.Panel):
             ICYP_OT_view_info_drawer.draw_func = None
     
     messages_dict = OrderedDict()
+    draw_dict = dict()
     @staticmethod
     def texts_draw():
-        messages = ICYP_OT_view_info_drawer.messages_dict
-        persp = bpy.context.space_data.region_3d.view_perspective
-
-        if persp == "ORTHO":
-            messages["Focal len"] = f"Focal len: ORTHO"
+        messages_parent = ICYP_OT_view_info_drawer.messages_dict
+        draw_dict = ICYP_OT_view_info_drawer.draw_dict
+        camera_info(messages_parent)
+        draw_dict["camera_info"] = True
+        if bpy.context.mode == "EDIT_MESH":
+            mesh_info(messages_parent)
+            draw_dict["mesh_info"] = True
         else:
-            if persp == "CAMERA":
-                focal_len = bpy.context.space_data.camera.data.lens
-            else:
-                focal_len = bpy.context.space_data.lens
-            if bpy.context.space_data.camera is not None:
-                camera = bpy.context.space_data.camera
-                hit,loc,norm,_,_,_ = bpy.context.scene.ray_cast(bpy.context.view_layer,camera.location,[0,0,-1])
-                if hit:
-                    messages["CAMERA_HEIGHT"] = f"CAMERA_HEIGHT :{camera.location[2]-loc[2]:.2f}m"
-                else:
-                    messages["CAMERA_HEIGHT"] = f"CAMERA_HEIGHT :{camera.location[2]:.2f}m"
-            else:
-                if "CAMERA_HEIGHT" in messages.keys():
-                    del messages["CAMERA_HEIGHT"]
-            messages["Focal len"] = f"Focal len :{focal_len:.1f}"
-            if focal_len >= 60:
-                messages["Focal len"] += " ZOOM"
-            elif focal_len >= 47 and focal_len <= 52:
-                messages["Focal len"] += " Eye like"
-            elif focal_len <= 25:
-                messages["Focal len"] += " WIDE"
-
-        messages["camera mode"] = f"camera mode :{bpy.context.space_data.region_3d.view_perspective}"
-
+            draw_dict["mesh_info"] = False
         #なんかちがうmessages["camera height"] = f"camera height :{bpy.context.space_data.region_3d.view_location[2]}"
         text_size = bpy.context.scene.icyp_view_info_text_size
         text_color = bpy.context.scene.icyp_view_info_text_color
@@ -107,9 +128,12 @@ class ICYP_OT_view_info_drawer(bpy.types.Panel):
         blf.enable(0,blf.SHADOW)
         blf.shadow(0,3,0,0,0,1) #fontid shadowlevel r g b a
         blf.shadow_offset(0,1,-1) #fontid x(pixel) y
-        for i,text in enumerate(messages.values()):
-            blf.position(0, text_size, text_size*(i+1)+100, 0)
-            blf.draw(0, f"{text}")
+        for i,text in enumerate([(log_func,message) for log_func,messages in messages_parent.items() for message in messages.values()]):
+            if draw_dict[text[0]]:
+                blf.position(0, text_size, text_size*(i+1)+100, 0)
+                blf.draw(0, f"{text[1]}")
+            else:
+                i -= 1
 
 
 # アドオン有効化時の処理
