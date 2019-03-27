@@ -46,6 +46,7 @@ class ICYP_OT_view_info_drawer(bpy.types.Panel):
     def draw(self, context):
         self.layout.prop(context.scene,"icyp_view_info_flag")
         self.layout.prop(context.scene,"icyp_view_info_text_size")
+        self.layout.prop(context.scene,"icyp_view_info_text_color")
     
 
     draw_func = None
@@ -99,13 +100,15 @@ class ICYP_OT_view_info_drawer(bpy.types.Panel):
 
         #なんかちがうmessages["camera height"] = f"camera height :{bpy.context.space_data.region_3d.view_location[2]}"
         text_size = bpy.context.scene.icyp_view_info_text_size
+        text_color = bpy.context.scene.icyp_view_info_text_color
         dpi = 72
         blf.size(0, text_size, dpi)
+        blf.color(0,*text_color,1)
+        blf.enable(0,blf.SHADOW)
+        blf.shadow(0,3,0,0,0,1) #fontid shadowlevel r g b a
+        blf.shadow_offset(0,1,-1) #fontid x(pixel) y
         for i,text in enumerate(messages.values()):
             blf.position(0, text_size, text_size*(i+1)+100, 0)
-            blf.enable(0,blf.SHADOW)
-            blf.shadow(0,3,0,0,0,1) #fontid shadowlevel r g b a
-            blf.shadow_offset(0,1,-1) #fontid x(pixel) y
             blf.draw(0, f"{text}")
 
 
@@ -114,6 +117,7 @@ classes = [ICYP_OT_view_info_drawer]
 def register():
     bpy.types.Scene.icyp_view_info_flag = bpy.props.BoolProperty(default=False,update=draw_change,name="Show view info")
     bpy.types.Scene.icyp_view_info_text_size = bpy.props.IntProperty(default=20,min=1,name = "text size")
+    bpy.types.Scene.icyp_view_info_text_color = bpy.props.FloatVectorProperty(name="Text color", subtype="COLOR", default=[0.8, 1.0, 0.4], min=0, max=1)
     for c in classes:
         bpy.utils.register_class(c)
     bpy.app.handlers.load_post.append(draw_change_load_post)
@@ -122,6 +126,7 @@ def register():
 def unregister():
     del bpy.types.Scene.icyp_view_info_flag
     del bpy.types.Scene.icyp_view_info_text_size
+    del bpy.types.Scene.icyp_view_info_text_color
     for c in classes:
         bpy.utils.unregister_class(c)
     bpy.app.handlers.load_post.remove(draw_change_load_post)
