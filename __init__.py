@@ -77,6 +77,16 @@ class ICYP_OT_view_info_drawer(bpy.types.Panel):
                 focal_len = bpy.context.space_data.camera.data.lens
             else:
                 focal_len = bpy.context.space_data.lens
+            if bpy.context.space_data.camera is not None:
+                camera = bpy.context.space_data.camera
+                hit,loc,norm,_,_,_ = bpy.context.scene.ray_cast(bpy.context.view_layer,camera.location,[0,0,-1])
+                if hit:
+                    messages["CAMERA_HEIGHT"] = f"CAMERA_HEIGHT :{camera.location[2]-loc[2]:.2f}m"
+                else:
+                    messages["CAMERA_HEIGHT"] = f"CAMERA_HEIGHT :{camera.location[2]:.2f}m"
+            else:
+                if "CAMERA_HEIGHT" in messages.keys():
+                    del messages["CAMERA_HEIGHT"]
             messages["Focal len"] = f"Focal len :{focal_len:.1f}"
             if focal_len >= 60:
                 messages["Focal len"] += " ZOOM"
@@ -86,12 +96,16 @@ class ICYP_OT_view_info_drawer(bpy.types.Panel):
                 messages["Focal len"] += " WIDE"
 
         messages["camera mode"] = f"camera mode :{bpy.context.space_data.region_3d.view_perspective}"
+
         #なんかちがうmessages["camera height"] = f"camera height :{bpy.context.space_data.region_3d.view_location[2]}"
         text_size = bpy.context.scene.icyp_view_info_text_size
         dpi = 72
         blf.size(0, text_size, dpi)
         for i,text in enumerate(messages.values()):
             blf.position(0, text_size, text_size*(i+1)+100, 0)
+            blf.enable(0,blf.SHADOW)
+            blf.shadow(0,3,0,0,0,1) #fontid shadowlevel r g b a
+            blf.shadow_offset(0,1,-1) #fontid x(pixel) y
             blf.draw(0, f"{text}")
 
 
