@@ -68,7 +68,8 @@ def mesh_info(messages):
     if obj.active_shape_key is not None:
         mesh_messages["ACTIVE_SHAPE"]=f"ACTIVE SHAPE KEY : {obj.active_shape_key.name}"
     else:
-        del mesh_messages["AC"]
+        if "ACTIVE_SHAPE" in mesh_messages.keys():
+            del mesh_messages["ACTIVE_SHAPE"]
 
     return
 
